@@ -73,7 +73,13 @@ if(isset($success))
 				<?php
 				}
 				?>
-
+				<li class="pull-right">
+					<?php echo anchor(
+						$controller_name."/due_payment", 
+						'<span class="glyphicon glyphicon-list-alt">&nbsp</span>Due Payment',
+						array('class'=>'btn btn-primary btn-sm', 'title'=>'Due payment')
+					); ?>
+				</li>
 			</ul>
 		</div>
 	<?php echo form_close(); ?>

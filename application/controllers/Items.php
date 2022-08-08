@@ -1223,5 +1223,41 @@ class Items extends Secure_Controller
 			}
 		}
 	}
+
+	/**
+	 * 
+	 * get low inventory
+	 */
+	public function inventory_low()
+	{
+		$inputs = array();
+
+		$this->load->model('reports/Inventory_low');
+		$model = $this->Inventory_low;
+
+		$report_data = $model->getData($inputs);
+
+		$tabular_data = array();
+		foreach($report_data as $row)
+		{
+			$tabular_data[] = $this->xss_clean(array(
+				'item_name' => $row['name'],
+				'item_number' => $row['item_number'],
+				'quantity' => to_quantity_decimals($row['quantity']),
+				'reorder_level' => to_quantity_decimals($row['reorder_level']),
+				'location_name' => $row['location_name']
+			));
+		}
+
+		$data = array(
+			'title' => $this->lang->line('reports_inventory_low_report'),
+			'subtitle' => '',
+			'headers' => $this->xss_clean($model->getDataColumns()),
+			'data' => $tabular_data,
+			'summary_data' => $this->xss_clean($model->getSummaryData($inputs))
+		);
+
+		$this->load->view('reports/tabular', $data);
+	}
 }
 ?>

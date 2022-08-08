@@ -1570,5 +1570,60 @@ class Sales extends Secure_Controller
 
 		return NULL;
 	}
+
+	public function due_payment()
+	{
+		$employee_info = $this->Employee->get_logged_in_employee_info();
+		$employee_name = $this->xss_clean(
+			$employee_info->first_name . ' ' . $employee_info->last_name
+		);
+		$customer_title = $this->lang->line('reports_customer');
+		$payment_type = $this->get_payment_type();
+		$customers = [];
+		foreach($this->Customer->get_all()->result() as $customer)
+		{
+			if(isset($customer->company_name))
+			{
+				$customers[$customer->person_id] = $this->xss_clean($customer->first_name . ' ' . $customer->last_name. ' ' . ' [ '.$customer->company_name.' ] ');
+			}
+			else
+			{
+				$customers[$customer->person_id] = $this->xss_clean($customer->first_name . ' ' . $customer->last_name);
+			}
+		}
+		$this->load->view(
+			'sales/due_payment', 
+			compact('customers', 'customer_title', 'payment_type', 'employee_name')
+		);
+	}
+
+	public function save_due_payment($next=false)
+	{	
+		$employee_id = $this->Employee->get_logged_in_employee_info()->person_id;
+		$payment_amount = $this->input->post('input_payment_amount');
+		$input = [
+			'payment_amount' =>  $payment_amount == '' ? 0.00 : $payment_amount,
+			'payment_type' => $this->input->post('payment_type'),
+			'customer_id' => $this->input->post('specific_input_data'),
+			'comments' => $this->input->post('due_payment_comment'),
+			'employee_id' => $employee_id
+		];
+		$this->Sale->create_due_payment($input);
+		if($next){
+			return $this->due_payment();
+		}
+		redirect('sales');
+	}
+
+	public function get_payment_type()
+	{
+		$payment_type = array(
+			'cash' => $this->lang->line('sales_cash'),
+			'check' => $this->lang->line('sales_check'),
+			'credit' => $this->lang->line('sales_credit'),
+			'debit' => $this->lang->line('sales_debit'),
+		);
+		return $payment_type;
+	}
 }
 ?>

@@ -1411,6 +1411,13 @@ class Sale extends CI_Model
 		return $this->db->get();
 	}
 
+	public function create_due_payment($input)
+	{
+		$input['payment_date'] = date('Y-m-d H:i:s');
+		$input['payment_amount'] = floatval($input['payment_amount']);
+		$this->db->insert('sales_due_payments', $input);
+	}
+
 	/**
 	 * @param $customer_id
 	 * @param $sale_id
@@ -1437,6 +1444,5 @@ class Sale extends CI_Model
 			}
 		}
 	}
-
 }
 ?>

@@ -45,7 +45,11 @@ if(isset($error))
 						show_report('summary', $grant['permission_id']);
 					}
 				}
+				$person_id = $this->session->userdata('person_id');
+				if(is_allowed('customer', $person_id, 'reports_customers')){
 				?>
+				<a class="list-group-item" href="<?php echo site_url('reports/due_payment_input_customer');?>">Due Payment</a>
+				<?php } ?>
 			 </div>
 		</div>
 	</div>
@@ -64,7 +68,10 @@ if(isset($error))
 				show_report_if_allowed('specific', 'discount', $person_id, 'reports_discounts');
 				show_report_if_allowed('specific', 'employee', $person_id, 'reports_employees');
 				show_report_if_allowed('specific', 'supplier', $person_id, 'reports_suppliers');
+				if(is_allowed('customer', $person_id, 'reports_customers')){
 				?>
+				<a class="list-group-item" href="<?php echo site_url('reports/specific_due_payment_input_customer');?>">Due Payment</a>
+				<?php } ?>
 			 </div>
 		</div>
 

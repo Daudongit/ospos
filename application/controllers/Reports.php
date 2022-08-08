@@ -16,7 +16,6 @@ class Reports extends Secure_Controller
 			preg_match('/(?:inventory)|([^_.]*)(?:_graph|_row)?$/', $method_name, $matches);
 			preg_match('/^(.*?)([sy])?$/', array_pop($matches), $matches);
 			$submodule_id = $matches[1] . ((count($matches) > 2) ? $matches[2] : 's');
-
 			// check access to report submodule
 			if(!$this->Employee->has_grant('reports_' . $submodule_id, $this->Employee->get_logged_in_employee_info()->person_id))
 			{
@@ -1643,6 +1642,117 @@ class Reports extends Secure_Controller
 			'headers' => $this->xss_clean($model->getDataColumns()),
 			'data' => $tabular_data,
 			'summary_data' => $this->xss_clean($model->getSummaryData($report_data))
+		);
+
+		$this->load->view('reports/tabular', $data);
+	}
+
+	public function specific_due_payment_input_customer()
+	{
+		$data = array();
+		$data['specific_input_name'] = $this->lang->line('reports_customer');
+		$customers = array();
+		foreach($this->Customer->get_all()->result() as $customer)
+		{
+			if(isset($customer->company_name))
+			{
+				$customers[$customer->person_id] = $this->xss_clean($customer->first_name . ' ' . $customer->last_name. ' ' . ' [ '.$customer->company_name.' ] ');
+			}
+			else
+			{
+				$customers[$customer->person_id] = $this->xss_clean($customer->first_name . ' ' . $customer->last_name);
+			}
+		}
+		$data['specific_input_data'] = $customers;
+		$data['payment_type'] = array_filter(
+			$this->get_payment_type(), function($payment_type){
+				return !in_array($payment_type, ['due','invoices']);
+			}, ARRAY_FILTER_USE_KEY
+		);
+		$this->load->view('reports/due_payment_input', $data);
+	}
+
+	public function specific_due_payment_customer($customer_id, $payment_type='all')
+	{
+		$inputs = array('customer_id' => $customer_id, 'payment_type' => $payment_type);
+
+		$this->load->model('reports/Specific_due_payment');
+		$model = $this->Specific_due_payment;
+		// $model->create($inputs);
+
+		$report_data = $model->getData($inputs);
+
+		$tabular_data = array();
+		foreach($report_data as $row)
+		{
+			$tabular_data[] = $this->xss_clean(array(
+				'id' => $row['sales_due_payments_id'],
+				'payment_date' => to_datetime(strtotime($row['payment_date'])),
+				'employee_name' => $row['employee_name'],
+				// 'customer_name' => $row['customer_name'],
+				'payment_type' => $row['payment_type'],
+				'payment_amount' => to_currency($row['payment_amount']),
+				'comment' => $row['comments']
+			));
+		}
+
+		$customer_info = $model->get_info($customer_id);
+		$data = array(
+			'title' => $this->xss_clean(' (' . $customer_info->first_name . ' ' . $customer_info->last_name . ') Due Payment ' . $this->lang->line('reports_report')),
+			'subtitle' => $payment_type,
+			'headers' => $this->xss_clean($model->getDataColumns()),
+			'data' => $tabular_data,
+			'summary_data' => $this->xss_clean($model->getSummaryData($inputs))
+		);
+
+		$this->load->view('reports/tabular', $data);
+	}
+
+	public function due_payment_input_customer($start_date=null, $end_date=null, $payment_type='all')
+	{
+		if(!is_null($start_date) && !is_null($end_date)){
+			return $this->summary_due_payment_customers($start_date, $end_date, $payment_type);
+		}
+		$data = array();
+		$data['specific_input_name'] = 'Payment Type';
+		$data['specific_input_data'] = array_filter(
+			$this->get_payment_type(), function($payment_type){
+				return !in_array($payment_type, ['due','invoices']);
+			}, ARRAY_FILTER_USE_KEY
+		);
+
+		$this->load->view('reports/specific_input', $data);
+	}
+
+	// summary_due_payment_input_customer
+	public function summary_due_payment_customers($start_date, $end_date, $payment_type='all')
+	{  
+		$inputs = array(
+			'start_date' => $start_date, 'end_date' => $end_date, 'payment_type' => $payment_type
+		);
+		$this->load->model('reports/Summary_due_payment');
+		$model = $this->Summary_due_payment;
+
+		$report_data = $model->getData($inputs);
+		$summary = $this->xss_clean($model->getSummaryData($inputs));
+
+		$tabular_data = array();
+		foreach($report_data as $row)
+		{
+			$tabular_data[] = $this->xss_clean(array(
+				'customer_name' => $row['customer_name'],
+				'payment_count' => to_quantity_decimals($row['payment_count']),
+				'payment_types' => $row['payment_types'],
+				'total_payment_amount' => to_currency($row['total_payment_amount'])
+			));
+		}
+
+		$data = array(
+			'title' => "{$this->lang->line('reports_customers_summary_report')}(Due Payment)",
+			'subtitle' => $this->_get_subtitle_report(array('start_date' => $start_date, 'end_date' => $end_date)),
+			'headers' => $this->xss_clean($model->getDataColumns()),
+			'data' => $tabular_data,
+			'summary_data' => $summary
 		);
 
 		$this->load->view('reports/tabular', $data);

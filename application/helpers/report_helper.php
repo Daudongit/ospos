@@ -30,4 +30,18 @@ function show_report($report_prefix, $report_name, $lang_key='')
 		<?php
 	}
 }
+
+function is_allowed($report_name, $person_id, $permission_id = '')
+{
+	$is_allowed = false;
+	$CI =& get_instance();
+
+	$permission_id = empty($permission_id) ? 'reports_' . $report_name : $permission_id;
+	if($CI->Employee->has_grant($permission_id, $person_id))
+	{
+		$is_allowed = true;
+	}
+	return $is_allowed;
+}
+
 ?>
