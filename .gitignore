@@ -13,4 +13,5 @@ application/config/config.php
 application/config/database.php
 application/logs/*.php
 .well-known
+well-known
 cgi-bin
