@@ -162,7 +162,8 @@ class Reports extends Secure_Controller
 				'tax' => to_currency_tax($row['tax']),
 				'total' => to_currency($row['total']),
 				'cost' => to_currency($row['cost']),
-				'profit' => to_currency($row['profit'])
+				'profit' => to_currency($row['profit']),
+				'customer_point' => $row['customer_point']
 			));
 		}
 

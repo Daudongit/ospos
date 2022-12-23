@@ -14,7 +14,9 @@ class Summary_customers extends Summary_report
 			array('tax' => $this->lang->line('reports_tax'), 'sorter' => 'number_sorter'),
 			array('total' => $this->lang->line('reports_total'), 'sorter' => 'number_sorter'),
 			array('cost' => $this->lang->line('reports_cost'), 'sorter' => 'number_sorter'),
-			array('profit' => $this->lang->line('reports_profit'), 'sorter' => 'number_sorter'));
+			array('profit' => $this->lang->line('reports_profit'), 'sorter' => 'number_sorter'),
+			array('customer_point' => 'Reward', 'sorter' => 'number_sorter')
+		);
 	}
 
 	protected function _select(array $inputs)
@@ -24,7 +26,8 @@ class Summary_customers extends Summary_report
 		$this->db->select('
 				MAX(CONCAT(customer_p.first_name, " ", customer_p.last_name)) AS customer,
 				SUM(sales_items.quantity_purchased) AS quantity_purchased,
-				COUNT(DISTINCT sales.sale_id) AS sales
+				COUNT(DISTINCT sales.sale_id) AS sales,
+				MAX(customers_info.points) AS customer_point
 		');
 	}
 
@@ -33,6 +36,7 @@ class Summary_customers extends Summary_report
 		parent::_from();
 
 		$this->db->join('people AS customer_p', 'sales.customer_id = customer_p.person_id');
+		$this->db->join('customers AS customers_info', 'customer_p.person_id = customers_info.person_id', 'left outer');
 	}
 
 	protected function _group_order()

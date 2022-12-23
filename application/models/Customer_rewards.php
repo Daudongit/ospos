@@ -53,7 +53,7 @@ class Customer_rewards extends CI_Model
 	}
 
 	/**
-	Deletes one reward package
+	*Deletes one reward package
 	*/
 	public function delete($package_id)
 	{
