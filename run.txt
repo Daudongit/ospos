@@ -6,3 +6,6 @@ https://bread.isleshopnet.com
 https://isleshopnet.com
 rsaliu
 Password1$
+
+
+env PATH="C:\wamp64\bin\php\php7.4.9:$PATH" php -S localhost:9000 -t public
