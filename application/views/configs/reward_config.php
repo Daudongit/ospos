@@ -24,6 +24,15 @@
                 'id' => 'submit_reward',
                 'value' => $this->lang->line('common_submit'),
                 'class' => 'btn btn-primary btn-sm pull-right')); ?>
+			<?php 
+				echo form_button(array(
+					'name'=>'reset_all_reward',
+					'id'=>'reset_all_reward',
+					'content'=>'Reset All Reward',
+					'class'=>'btn btn-primary btn-sm', 'type'=>'button')
+				);
+			?>
+
         </fieldset>
     </div>
 <?php echo form_close(); ?>
@@ -156,5 +165,18 @@ $(document).ready(function()
 			?>
 		}
 	}));
+
+	$('#reset_all_reward').click(function(event){
+		$.ajax({
+			url: "<?php echo $controller_name.'/reset_all_reward' ?>",
+			success: function(response)	{
+				$.notify(
+					{ message: response.message }, 
+					{ type: response.success ? 'success' : 'danger'}
+				);
+			},
+			dataType: 'json'
+		})
+	});
 });
 </script>

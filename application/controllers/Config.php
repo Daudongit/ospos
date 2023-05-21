@@ -957,5 +957,18 @@ class Config extends Secure_Controller
 			redirect('no_access/config');
 		}
 	}
+
+	public function reset_all_reward()
+	{
+		$success = false;
+		$msg = 'All reward reset ';
+		if($this->Customer->reset_all_reward_points_value()){
+			$success = true;
+		}
+		echo json_encode(array(
+			'success' => $success,
+			'message' => $msg. ($success ? '' : 'un') . 'successfully'
+		));
+	}
 }
 ?>

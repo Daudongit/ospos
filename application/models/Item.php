@@ -195,6 +195,10 @@ class Item extends CI_Model
 		{
 			$this->db->where('items.description', '');
 		}
+		if(!empty($filters['item_category']))
+		{
+			$this->db->where('items.category', $filters['item_category']);
+		}
 		if($filters['temporary'] != FALSE)
 		{
 			$this->db->where('items.item_type', ITEM_TEMP);
@@ -954,6 +958,16 @@ class Item extends CI_Model
 	{
 		$this->db->where('item_id', $item_id);
 		$this->db->update('items', array('description'=>$item_description));
+	}
+
+	public function get_all_category()
+	{
+		$categories = [''=>'[select]'];
+		foreach($this->get_categories()->result() as $row)
+		{
+			$categories[$row->category] = $row->category;
+		}
+		return $categories;
 	}
 
 	/**
