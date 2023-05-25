@@ -17,6 +17,11 @@ $(document).ready(function()
         table_support.refresh();
     });
 
+	$('#item_category').on('hidden.bs.select', function(e)
+	{
+        table_support.refresh();
+    });
+
 	// load the preset daterange picker
 	<?php $this->load->view('partial/daterangepicker'); ?>
     // set the beginning of time as starting date
@@ -44,7 +49,8 @@ $(document).ready(function()
                 start_date: start_date,
                 end_date: end_date,
                 stock_location: $("#stock_location").val(),
-                filters: $("#filters").val() || [""]
+                filters: $("#filters").val() || [""],
+                item_category: $("#item_category").val()
             });
         },
         onLoadSuccess: function(response) {
@@ -84,6 +90,7 @@ $(document).ready(function()
         </button>
         <?php echo form_input(array('name'=>'daterangepicker', 'class'=>'form-control input-sm', 'id'=>'daterangepicker')); ?>
         <?php echo form_multiselect('filters[]', $filters, '', array('id'=>'filters', 'class'=>'selectpicker show-menu-arrow', 'data-none-selected-text'=>$this->lang->line('common_none_selected_text'), 'data-selected-text-format'=>'count > 1', 'data-style'=>'btn-default btn-sm', 'data-width'=>'fit')); ?>
+        <?php echo form_dropdown('item_category', $item_category, '', array('id'=>'item_category', 'class'=>'selectpicker show-menu-arrow', 'data-none-selected-text'=>$this->lang->line('common_none_selected_text'), 'data-selected-text-format'=>'count > 1', 'data-style'=>'btn-default btn-sm', 'data-width'=>'fit')); ?>
         <?php
         if (count($stock_locations) > 1)
         {

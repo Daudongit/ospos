@@ -28,7 +28,7 @@ class Items extends Secure_Controller
 			'search_custom' => $this->lang->line('items_search_attributes'),
 			'is_deleted' => $this->lang->line('items_is_deleted'),
 			'temporary' => $this->lang->line('items_temp'));
-
+		$data['item_category'] = $this->Item->get_all_category();
 		$this->load->view('items/manage', $data);
 	}
 
@@ -58,8 +58,13 @@ class Items extends Secure_Controller
 			'search_custom' => FALSE,
 			'is_deleted' => FALSE,
 			'temporary' => FALSE,
-			'definition_ids' => array_keys($definition_names));
-
+			'definition_ids' => array_keys($definition_names),
+			'item_category' => ''
+		);
+		$item_category = $this->input->get('item_category');
+		if(!empty($item_category)){
+			$filters['item_category'] = $item_category;
+		}
 		//Check if any filter is set in the multiselect dropdown
 		$filledup = array_fill_keys($this->input->get('filters'), TRUE);
 		$filters = array_merge($filters, $filledup);

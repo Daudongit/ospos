@@ -1092,7 +1092,6 @@ class Sales extends Secure_Controller
 
 		$data['comment'] = $this->sale_lib->get_comment();
 		$data['email_receipt'] = $this->sale_lib->is_email_receipt();
-
 		if($customer_info && $this->config->item('customer_reward_enable') == TRUE)
 		{
 			$data['payment_options'] = $this->Sale->get_payment_options(TRUE, TRUE);

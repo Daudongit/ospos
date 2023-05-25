@@ -406,5 +406,14 @@ class Customer extends Person
 
 		return $this->db->get();
 	}
+
+	/*
+	Updates reward points value
+	*/
+	public function reset_all_reward_points_value()
+	{
+		$this->db->update('customers', array('points' => NULL));
+		return true;
+	}
 }
 ?>
