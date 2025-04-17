@@ -64,10 +64,15 @@ $(document).ready(function()
 </script>
 
 <div id="title_bar" class="btn-toolbar print_hide">
+    <a class='btn btn-info btn-sm pull-right' href="items/inventory_expire" target="_blank">Expire Inventory Report</a>
     <a class='btn btn-info btn-sm pull-right' href="items/inventory_low" target="_blank">Low Inventory Report</a>
-    <button class='btn btn-info btn-sm pull-right modal-dlg' data-btn-submit='<?php echo $this->lang->line('common_submit') ?>' data-href='<?php echo site_url("$controller_name/csv_import"); ?>'
-            title='<?php echo $this->lang->line('items_import_items_csv'); ?>'>
-        <span class="glyphicon glyphicon-import">&nbsp;</span><?php echo $this->lang->line('common_import_csv'); ?>
+    <button class='btn btn-info btn-sm pull-right modal-dlg' 
+        data-btn-submit='<?php echo $this->lang->line('common_submit') ?>' 
+        data-href='<?php echo site_url("$controller_name/csv_import"); ?>'
+        title='Item Import from CSV/Excel'>
+        <?php //echo $this->lang->line('items_import_items_csv'); ?>
+        <span class="glyphicon glyphicon-import">&nbsp;</span>Csv / Excel Import
+        <?php //echo $this->lang->line('common_import_csv'); ?>
     </button>
 
     <button class='btn btn-info btn-sm pull-right modal-dlg' data-btn-new='<?php echo $this->lang->line('common_new') ?>' data-btn-submit='<?php echo $this->lang->line('common_submit') ?>' data-href='<?php echo site_url("$controller_name/view"); ?>'

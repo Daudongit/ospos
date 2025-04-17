@@ -334,6 +334,34 @@
 			</div>
 		</div>
 
+		<div class="form-group form-group-sm" id="expiring_date_item">
+			<?php echo form_label('expiring date', 'expiring_date', array('class'=>'control-label col-xs-3')); ?>
+			<div class='col-xs-6'>
+				<div class="input-group">
+					<span class="input-group-addon input-sm"><span class="glyphicon glyphicon-calendar"></span></span>
+					<?php echo form_input(array(
+							'name'=>'expiring_date',
+							'id'=>'expiring_date',
+							'class'=>'form-control input-sm datepicker',
+							'value'=>$item_info->expiring_date
+							// 'value'=>to_datetime(strtotime($item_info->expiring_date))
+						));?>
+				</div>
+			</div>
+		</div>
+
+		<div class="form-group form-group-sm">
+			<?php echo form_label('expiring date is not applicable', 'expiring_date_is_not_applicable', array('class'=>'control-label col-xs-3')); ?>
+			<div class='col-xs-1'>
+				<?php echo form_checkbox(array(
+					'name'=>'expiring_date_is_not_applicable',
+					'id'=>'expiring_date_is_not_applicable',
+					'value'=>1,
+					'checked'=>($item_info->expiring_date_is_not_applicable) ? 1 : 0)
+				);?>
+			</div>
+		</div>
+
 		<div class="form-group form-group-sm">
 			<?php echo form_label($this->lang->line('items_description'), 'description', array('class'=>'control-label col-xs-3')); ?>
 			<div class='col-xs-8'>
@@ -455,6 +483,44 @@
 //validation and submit handling
 $(document).ready(function()
 {
+	<?php $this->load->view('partial/datepicker_locale'); ?>
+
+	if($("#expiring_date_is_not_applicable").is(':checked')){
+		$("#expiring_date_item").hide();
+	}
+
+	$('#expiring_date_is_not_applicable').click(function() {
+		$("#expiring_date_item").toggle(!this.checked);
+	});
+
+	$('#expiring_date').datetimepicker({
+		format: "<?php echo dateformat_bootstrap($this->config->item('dateformat')) . ' ' . dateformat_bootstrap($this->config->item('timeformat'));?>",
+		startDate: "<?php echo date($this->config->item('dateformat') . ' ' . $this->config->item('timeformat'), mktime(0, 0, 0, 1, 1, 2010));?>",
+		<?php
+		$t = $this->config->item('timeformat');
+		$m = $t[strlen($t)-1];
+		if( strpos($this->config->item('timeformat'), 'a') !== false || strpos($this->config->item('timeformat'), 'A') !== false )
+		{
+		?>
+			showMeridian: true,
+		<?php
+		}
+		else
+		{
+		?>
+			showMeridian: false,
+		<?php
+		}
+		?>
+		minuteStep: 1,
+		autoclose: true,
+		todayBtn: true,
+		todayHighlight: true,
+		bootcssVer: 3,
+		language: '<?php echo current_language_code(); ?>'
+	});
+
+
 	$('#new').click(function() {
 		stay_open = true;
 		$('#item_form').submit();
@@ -603,6 +669,13 @@ $(document).ready(function()
 				{
 					required: true,
 					remote: "<?php echo site_url($controller_name . '/check_numeric')?>"
+				},
+				expiring_date:
+				{
+					required: function(element){
+						return !$("#expiring_date_is_not_applicable").is(':checked')
+						// return $("#firstInput").val()!="";
+					}
 				}
 			},
 
@@ -647,7 +720,8 @@ $(document).ready(function()
 				{
 					required: "<?php echo $this->lang->line('items_tax_percent_required'); ?>",
 					number: "<?php echo $this->lang->line('items_tax_percent_number'); ?>"
-				}
+				},
+				expiring_date: '`expiring_date` is required if `expiring_date_is_not_applicable` is not checked'
 			}
 		}, form_support.error));
 	};
