@@ -508,7 +508,9 @@ class Items extends Secure_Controller
 		$upload_data = $this->upload->data();
 		$receiving_quantity = parse_quantity($this->input->post('receiving_quantity'));
 		$item_type = $this->input->post('item_type') === NULL ? ITEM : $this->input->post('item_type');
-
+		$expiring_date = $this->input->post('expiring_date');
+		$expiring_date_is_not_applicable = $this->input->post('expiring_date_is_not_applicable');
+		$expiring_date_formatter = date_create_from_format($this->config->item('dateformat') . ' ' . $this->config->item('timeformat'), $expiring_date);
 		if($receiving_quantity === 0 && $item_type !== ITEM_TEMP)
 		{
 			$receiving_quantity = 1;
@@ -535,7 +537,9 @@ class Items extends Secure_Controller
 			'pack_name' => $this->input->post('pack_name') === NULL ? $default_pack_name : $this->input->post('pack_name'),
 			'low_sell_item_id' => $this->input->post('low_sell_item_id') === NULL ? $item_id : $this->input->post('low_sell_item_id'),
 			'deleted' => $this->input->post('is_deleted') !== NULL,
-			'hsn_code' => $this->input->post('hsn_code') === NULL ? '' : $this->input->post('hsn_code')
+			'hsn_code' => $this->input->post('hsn_code') === NULL ? '' : $this->input->post('hsn_code'),
+			'expiring_date_is_not_applicable' => $expiring_date_is_not_applicable !== NULL,
+			'expiring_date'=> $expiring_date_is_not_applicable !== NULL ? NULL : $expiring_date_formatter->format('Y-m-d')
 		);
 
 		if($item_data['item_type'] == ITEM_TEMP)
@@ -834,16 +838,27 @@ class Items extends Secure_Controller
 		force_download($name, $data, TRUE);
 	}
 
+	public function download_import_excel_xlsx_template()
+	{
+		$file_path = FCPATH . 'import_items.xlsx';
+		log_message('Error',"File path: ".$file_path);
+		if (file_exists($file_path)) {
+			force_download('import_items_template.xlsx', file_get_contents($file_path));
+		} else {
+			show_error('Template file not found', 404);
+		}
+	}
+	
 	public function csv_import()
 	{
 		$this->load->view('items/form_csv_import', NULL);
 	}
 
 	/**
-	 * Imports items from CSV formatted file.
+	 * Imports items from CSV/excel formatted file.
 	 */
 	public function import_csv_file()
-	{
+	{  
 		if($_FILES['file_path']['error'] !== UPLOAD_ERR_OK)
 		{
 			echo json_encode(array('success' => FALSE, 'message' => $this->lang->line('items_csv_import_failed')));
@@ -855,7 +870,16 @@ class Items extends Secure_Controller
 				set_time_limit(240);
 
 				$failCodes = [];
-				$csv_rows = get_csv_file($_FILES['file_path']['tmp_name']);
+				$file_ext = pathinfo($_FILES['file_path']['name'], PATHINFO_EXTENSION);
+				if(in_array(strtolower($file_ext), ['xls', 'xlsx', 'ods'])) {
+					$csv_rows = get_excel_file($_FILES['file_path']['tmp_name']);
+				} else {
+					$csv_rows = get_csv_file($_FILES['file_path']['tmp_name']);
+				}
+				// set_time_limit(240);
+
+				// $failCodes = [];
+				// $csv_rows = get_csv_file($_FILES['file_path']['tmp_name']);
 				$employee_id = $this->Employee->get_logged_in_employee_info()->person_id;
 				$allowed_stock_locations = $this->Stock_location->get_allowed_locations();
 				$attribute_definition_names	= $this->Attribute->get_definition_names();
@@ -879,6 +903,8 @@ class Items extends Secure_Controller
 					$is_failed_row = FALSE;
 					$item_id = $row['Id'];
 					$is_update = !empty($item_id);
+					$has_expiring_date = !empty($row['expiring_date']);
+					$expiring_date_is_not_applicable = $has_expiring_date ? 0 : 1;					
 					$item_data = array(
 						'item_id' => $item_id,
 						'name' => $row['Item Name'],
@@ -889,8 +915,10 @@ class Items extends Secure_Controller
 						'reorder_level' => $row['Reorder Level'],
 						'deleted' => FALSE,
 						'hsn_code' => $row['HSN'],
-						'pic_filename' => $row['Image']);
-
+						'pic_filename' => $row['Image'],
+						'expiring_date' => $has_expiring_date ? $row['expiring_date'] : NULL,
+						'expiring_date_is_not_applicable' => $expiring_date_is_not_applicable
+					);				
 					if(!empty($row['Supplier ID']))
 					{
 						$item_data['supplier_id'] = $this->Supplier->exists($row['Supplier ID']) ? $row['Supplier ID'] : NULL;
@@ -920,7 +948,7 @@ class Items extends Secure_Controller
 
 					//Remove FALSE, NULL, '' and empty strings but keep 0
 					$item_data = array_filter($item_data, 'strlen');
-
+					// log_message('ERROR',"CSV Item: ".json_encode($item_data));
 					if(!$is_failed_row && $this->Item->save($item_data, $item_id))
 					{
 						$this->save_tax_data($row, $item_data);
@@ -1066,7 +1094,12 @@ class Items extends Secure_Controller
 				}
 			}
 		}
-
+		if (isset($row['expiring_date']) && $row['expiring_date'] !== '') {
+			if (!strtotime($row['expiring_date'])) {
+				log_message('Error', "Invalid date format for expiring_date. Use YYYY-MM-DD format. Provided value: ".$row['expiring_date']);
+				return TRUE;
+			}
+		}
 		return FALSE;
 	}
 
@@ -1256,6 +1289,48 @@ class Items extends Secure_Controller
 
 		$data = array(
 			'title' => $this->lang->line('reports_inventory_low_report'),
+			'subtitle' => '',
+			'headers' => $this->xss_clean($model->getDataColumns()),
+			'data' => $tabular_data,
+			'summary_data' => $this->xss_clean($model->getSummaryData($inputs))
+		);
+
+		$this->load->view('reports/tabular', $data);
+	}
+
+	/**
+	 * 
+	 * get expired inventory
+	 */
+	public function inventory_expire()
+	{
+		$inputs = array();
+
+		$this->load->model('reports/Inventory_expired');
+		$this->load->helper('timeago');
+
+		$model = $this->Inventory_expired;
+
+		$report_data = $model->getData($inputs);
+
+		$tabular_data = array();
+		foreach($report_data as $row)
+		{ 
+			$item_expiring_date = date("F j, Y", strtotime($row['item_expiring_date']));
+			// $item_expiring_date2 = date("d-m-Y", strtotime($row['item_expiring_date']));
+			$item_expiring_date_ago = timeago(strtotime($row['item_expiring_date']));
+			$tabular_data[] = $this->xss_clean(array(
+				'item_name' => $row['name'],
+				'item_number' => $row['item_number'],
+				'item_expiring_date' => $item_expiring_date."&nbsp;&nbsp;&nbsp; (".$item_expiring_date_ago.")",
+				'quantity' => to_quantity_decimals($row['quantity']),
+				'reorder_level' => to_quantity_decimals($row['reorder_level']),
+				'location_name' => $row['location_name']
+			));
+		}
+
+		$data = array(
+			'title' => 'Expire Inventory Report',
 			'subtitle' => '',
 			'headers' => $this->xss_clean($model->getDataColumns()),
 			'data' => $tabular_data,

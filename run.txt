@@ -4,8 +4,14 @@ https://bread.isleshopnet.com
 
 
 https://isleshopnet.com
-rsaliu
-Password1$
 
 
 env PATH="C:\wamp64\bin\php\php7.4.9:$PATH" php -S localhost:9000 -t public
+
+https://isleshopnet.com/config
+
+Add category filter to items
+I added a Reset_All_Reward button to reward tab of configuration section
+Add expire inventrory button and table
+Add items with excel sheet template for items upload
+re-generate composer.json file
